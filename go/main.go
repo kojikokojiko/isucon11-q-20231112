@@ -1076,7 +1076,21 @@ func calculateConditionLevel(condition string) (string, error) {
 
 // GET /api/trend
 // ISUの性格毎の最新のコンディション情報
+
+// キャッシュのデータ構造
+type TrendCache struct {
+    Data      []TrendResponse
+    Timestamp time.Time
+}
+
+var cache TrendCache
+
 func getTrend(c echo.Context) error {
+
+    // キャッシュの有効期限をチェック（例：10s）
+    if time.Since(cache.Timestamp) < 1*time.Second {
+        return c.JSON(http.StatusOK, cache.Data)
+    }
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
 	if err != nil {
@@ -1150,6 +1164,12 @@ func getTrend(c echo.Context) error {
 				Warning:   characterWarningIsuConditions,
 				Critical:  characterCriticalIsuConditions,
 			})
+	}
+
+	// データベースからのデータ取得後、キャッシュに保存
+	cache = TrendCache{
+		Data:      res,
+		Timestamp: time.Now(),
 	}
 
 	return c.JSON(http.StatusOK, res)
