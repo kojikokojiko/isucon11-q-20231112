@@ -6,3 +6,6 @@
 /ruby
 /rust
 /frontend
+/access_logs
+/digest-log
+/go/app

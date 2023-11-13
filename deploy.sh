@@ -25,11 +25,11 @@ sudo cp etc/nginx/conf.d/default.conf /etc/nginx/conf.d/
 
 # Golangディレクトリに移動
 echo "Changing directory to golang..."
-cd golang
+cd go
 
 # Goビルド
 echo "Building the Go application..."
-go build -o app 
+go build -o isucondition
 
 # MySQLとNginxのログを初期化
 echo "Resetting MySQL and Nginx logs..."
