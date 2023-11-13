@@ -30,6 +30,30 @@ CREATE TABLE `isu_condition` (
 
 CREATE INDEX idx_jia_isu_uuid_timestamp ON isu_condition (jia_isu_uuid, timestamp DESC);
 
+ALTER TABLE isu_condition
+ADD COLUMN condition_level VARCHAR(10);
+
+UPDATE isu_condition
+SET condition_level = CASE
+    WHEN LENGTH(condition) - LENGTH(REPLACE(condition, 'true', '')) = LENGTH('true') * 0 THEN 'info'
+    WHEN LENGTH(condition) - LENGTH(REPLACE(condition, 'true', '')) BETWEEN LENGTH('true') * 1 AND LENGTH('true') * 2 THEN 'warning'
+    WHEN LENGTH(condition) - LENGTH(REPLACE(condition, 'true', '')) = LENGTH('true') * 3 THEN 'critical'
+    ELSE 'unknown'
+END;
+
+
+CREATE TRIGGER before_isu_condition_insert
+BEFORE INSERT ON isu_condition
+FOR EACH ROW
+SET NEW.condition_level = CASE
+    WHEN LENGTH(NEW.condition) - LENGTH(REPLACE(NEW.condition, 'true', '')) = LENGTH('true') * 0 THEN 'info'
+    WHEN LENGTH(NEW.condition) - LENGTH(REPLACE(NEW.condition, 'true', '')) BETWEEN LENGTH('true') * 1 AND LENGTH('true') * 2 THEN 'warning'
+    WHEN LENGTH(NEW.condition) - LENGTH(REPLACE(NEW.condition, 'true', '')) = LENGTH('true') * 3 THEN 'critical'
+    ELSE 'unknown'
+END;
+
+
+
 CREATE TABLE `user` (
   `jia_user_id` VARCHAR(255) PRIMARY KEY,
   `created_at` DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6)
