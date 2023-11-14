@@ -1220,13 +1220,17 @@ func postIsuCondition(c echo.Context) error {
 		Timestamp  time.Time `db:"timestamp"`
 		IsSitting  bool      `db:"is_sitting"`
 		Condition  string    `db:"condition"`
+		ConditionLevel string `db:"condition_level"`
 		Message    string    `db:"message"`
 	}
 	rows := make([]InsertRow, 0, len(req))
 	for _, cond := range req {
 		timestamp := time.Unix(cond.Timestamp, 0)
 
-		if !isValidConditionFormat(cond.Condition) {
+		// if !isValidConditionFormat(cond.Condition) {
+		conditionLevel,err:=calculateConditionLevel(cond.condition)
+		
+		if err!=nil{
 			return c.String(http.StatusBadRequest, "bad request body")
 		}
 		
@@ -1235,6 +1239,7 @@ func postIsuCondition(c echo.Context) error {
 			Timestamp:  timestamp,
 			IsSitting:  cond.IsSitting,
 			Condition:  cond.Condition,
+			ConditionLevel: conditionLevel
 			Message:    cond.Message,
 		})
 	}
@@ -1242,8 +1247,8 @@ func postIsuCondition(c echo.Context) error {
 	// BULK INSERT
 	_, err = tx.NamedExec(
 		"INSERT INTO `isu_condition`"+
-			"	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`, `message`)"+
-			"	VALUES (:jia_isu_uuid, :timestamp, :is_sitting, :condition, :message)",
+			"	(`jia_isu_uuid`, `timestamp`, `is_sitting`, `condition`,`condition_level`, `message`)"+
+			"	VALUES (:jia_isu_uuid, :timestamp, :is_sitting, :condition,:condition_level, :message)",
 		rows)
 	if err != nil {
 		c.Logger().Errorf("db error: %v", err)
