@@ -1008,53 +1008,108 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 	conditions := []IsuCondition{}
 	var err error
 
-	if startTime.IsZero() {
-		err = db.Select(&conditions,
-			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
-				"	AND `timestamp` < ?"+
-				"	ORDER BY `timestamp` DESC",
-			jiaIsuUUID, endTime,
-		)
-	} else {
-		err = db.Select(&conditions,
-			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
-				"	AND `timestamp` < ?"+
-				"	AND ? <= `timestamp`"+
-				"	ORDER BY `timestamp` DESC",
-			jiaIsuUUID, endTime, startTime,
-		)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("db error: %v", err)
-	}
+    // 条件レベルのキーを取得
+    var conditionLevels []string
+    for level := range conditionLevel {
+        conditionLevels = append(conditionLevels, level)
+    }
 
-	conditionsResponse := []*GetIsuConditionResponse{}
-	for _, c := range conditions {
-		// cLevel, err := calculateConditionLevel(c.Condition)
-		// if err != nil {
-		// 	continue
-		// }
+    baseQuery := "SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ? AND `timestamp` < ? AND `condition_level` IN (?)"
+    var params []interface{}
+    params = append(params, jiaIsuUUID, endTime, conditionLevels)
 
-		if _, ok := conditionLevel[c.ConditionLevel]; ok {
-			data := GetIsuConditionResponse{
-				JIAIsuUUID:     c.JIAIsuUUID,
-				IsuName:        isuName,
-				Timestamp:      c.Timestamp.Unix(),
-				IsSitting:      c.IsSitting,
-				Condition:      c.Condition,
-				ConditionLevel: c.ConditionLevel,
-				Message:        c.Message,
-			}
-			conditionsResponse = append(conditionsResponse, &data)
-		}
-	}
+    if !startTime.IsZero() {
+        baseQuery += " AND ? <= `timestamp`"
+        params = append(params, startTime)
+    }
 
-	if len(conditionsResponse) > limit {
-		conditionsResponse = conditionsResponse[:limit]
-	}
+    baseQuery += " ORDER BY `timestamp` DESC LIMIT ?"
+    params = append(params, limit)
+
+    query, args, err := sqlx.In(baseQuery, params...)
+    if err != nil {
+        return nil, fmt.Errorf("query building error: %v", err)
+    }
+
+    err = db.Select(&conditions, db.Rebind(query), args...)
+    if err != nil {
+        return nil, fmt.Errorf("db error: %v", err)
+    }
+
+
+	conditionsResponse := make([]*GetIsuConditionResponse, 0, len(conditions))
+    for _, c := range conditions {
+        data := GetIsuConditionResponse{
+            JIAIsuUUID:     c.JIAIsuUUID,
+            IsuName:        isuName,
+            Timestamp:      c.Timestamp.Unix(),
+            IsSitting:      c.IsSitting,
+            Condition:      c.Condition,
+            ConditionLevel: c.ConditionLevel,
+            Message:        c.Message,
+        }
+        conditionsResponse = append(conditionsResponse, &data)
+    }
 
 	return conditionsResponse, nil
 }
+
+
+
+// // ISUのコンディションをDBから取得
+// func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, conditionLevel map[string]interface{}, startTime time.Time,
+// 	limit int, isuName string) ([]*GetIsuConditionResponse, error) {
+
+// 	conditions := []IsuCondition{}
+// 	var err error
+
+// 	if startTime.IsZero() {
+// 		err = db.Select(&conditions,
+// 			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
+// 				"	AND `timestamp` < ?"+
+// 				"	ORDER BY `timestamp` DESC",
+// 			jiaIsuUUID, endTime,
+// 		)
+// 	} else {
+// 		err = db.Select(&conditions,
+// 			"SELECT * FROM `isu_condition` WHERE `jia_isu_uuid` = ?"+
+// 				"	AND `timestamp` < ?"+
+// 				"	AND ? <= `timestamp`"+
+// 				"	ORDER BY `timestamp` DESC",
+// 			jiaIsuUUID, endTime, startTime,
+// 		)
+// 	}
+// 	if err != nil {
+// 		return nil, fmt.Errorf("db error: %v", err)
+// 	}
+
+// 	conditionsResponse := []*GetIsuConditionResponse{}
+// 	for _, c := range conditions {
+// 		// cLevel, err := calculateConditionLevel(c.Condition)
+// 		// if err != nil {
+// 		// 	continue
+// 		// }
+
+// 		if _, ok := conditionLevel[c.ConditionLevel]; ok {
+// 			data := GetIsuConditionResponse{
+// 				JIAIsuUUID:     c.JIAIsuUUID,
+// 				IsuName:        isuName,
+// 				Timestamp:      c.Timestamp.Unix(),
+// 				IsSitting:      c.IsSitting,
+// 				Condition:      c.Condition,
+// 				ConditionLevel: c.ConditionLevel,
+// 				Message:        c.Message,
+// 			}
+// 			conditionsResponse = append(conditionsResponse, &data)
+// 		}
+// 	}
+
+// 	if len(conditionsResponse) > limit {
+// 		conditionsResponse = conditionsResponse[:limit]
+// 	}
+
+// 	return conditionsResponse, nil
+// }
 
 // ISUのコンディションの文字列からコンディションレベルを計算
 func calculateConditionLevel(condition string) (string, error) {
