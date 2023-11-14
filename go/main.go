@@ -86,6 +86,7 @@ type IsuCondition struct {
 	Timestamp  time.Time `db:"timestamp"`
 	IsSitting  bool      `db:"is_sitting"`
 	Condition  string    `db:"condition"`
+	ConditionLevel string `db:"condition_level"`
 	Message    string    `db:"message"`
 	CreatedAt  time.Time `db:"created_at"`
 }
@@ -486,11 +487,11 @@ func getIsuList(c echo.Context) error {
 
 		var formattedCondition *GetIsuConditionResponse
 		if foundLastCondition {
-			conditionLevel, err := calculateConditionLevel(lastCondition.Condition)
-			if err != nil {
-				c.Logger().Error(err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
+			// conditionLevel, err := calculateConditionLevel(lastCondition.Condition)
+			// if err != nil {
+			// 	c.Logger().Error(err)
+			// 	return c.NoContent(http.StatusInternalServerError)
+			// }
 
 			formattedCondition = &GetIsuConditionResponse{
 				JIAIsuUUID:     lastCondition.JIAIsuUUID,
@@ -498,7 +499,7 @@ func getIsuList(c echo.Context) error {
 				Timestamp:      lastCondition.Timestamp.Unix(),
 				IsSitting:      lastCondition.IsSitting,
 				Condition:      lastCondition.Condition,
-				ConditionLevel: conditionLevel,
+				ConditionLevel: lastCondition.Condition,
 				Message:        lastCondition.Message,
 			}
 		}
@@ -1029,10 +1030,10 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 
 	conditionsResponse := []*GetIsuConditionResponse{}
 	for _, c := range conditions {
-		cLevel, err := calculateConditionLevel(c.Condition)
-		if err != nil {
-			continue
-		}
+		// cLevel, err := calculateConditionLevel(c.Condition)
+		// if err != nil {
+		// 	continue
+		// }
 
 		if _, ok := conditionLevel[cLevel]; ok {
 			data := GetIsuConditionResponse{
@@ -1041,7 +1042,7 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 				Timestamp:      c.Timestamp.Unix(),
 				IsSitting:      c.IsSitting,
 				Condition:      c.Condition,
-				ConditionLevel: cLevel,
+				ConditionLevel: c.ConditionLevel,
 				Message:        c.Message,
 			}
 			conditionsResponse = append(conditionsResponse, &data)
@@ -1127,16 +1128,14 @@ func getTrend(c echo.Context) error {
 
 			if len(conditions) > 0 {
 				isuLastCondition := conditions[0]
-				conditionLevel, err := calculateConditionLevel(isuLastCondition.Condition)
-				if err != nil {
-					c.Logger().Error(err)
-					return c.NoContent(http.StatusInternalServerError)
-				}
+				// conditionLevel, err := calculateConditionLevel(isuLastCondition.Condition)
+				
+
 				trendCondition := TrendCondition{
 					ID:        isu.ID,
 					Timestamp: isuLastCondition.Timestamp.Unix(),
 				}
-				switch conditionLevel {
+				switch isuLastCondition.ConditionLevel {
 				case "info":
 					characterInfoIsuConditions = append(characterInfoIsuConditions, &trendCondition)
 				case "warning":
@@ -1239,7 +1238,7 @@ func postIsuCondition(c echo.Context) error {
 			Timestamp:  timestamp,
 			IsSitting:  cond.IsSitting,
 			Condition:  cond.Condition,
-			ConditionLevel: conditionLevel
+			ConditionLevel: conditionLevel,
 			Message:    cond.Message,
 		})
 	}
