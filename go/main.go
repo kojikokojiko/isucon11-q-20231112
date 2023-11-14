@@ -1035,7 +1035,7 @@ func getIsuConditionsFromDB(db *sqlx.DB, jiaIsuUUID string, endTime time.Time, c
 		// 	continue
 		// }
 
-		if _, ok := conditionLevel[cLevel]; ok {
+		if _, ok := conditionLevel[c.ConditionLevel]; ok {
 			data := GetIsuConditionResponse{
 				JIAIsuUUID:     c.JIAIsuUUID,
 				IsuName:        isuName,
@@ -1227,7 +1227,7 @@ func postIsuCondition(c echo.Context) error {
 		timestamp := time.Unix(cond.Timestamp, 0)
 
 		// if !isValidConditionFormat(cond.Condition) {
-		conditionLevel,err:=calculateConditionLevel(cond.condition)
+		conditionLevel,err:=calculateConditionLevel(cond.Condition)
 		
 		if err!=nil{
 			return c.String(http.StatusBadRequest, "bad request body")
