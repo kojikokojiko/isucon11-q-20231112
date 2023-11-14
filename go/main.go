@@ -1089,7 +1089,7 @@ var cache TrendCache
 func getTrend(c echo.Context) error {
 
     // キャッシュの有効期限をチェック（例：10s）
-    if time.Since(cache.Timestamp) < 1*time.Second {
+    if time.Since(cache.Timestamp) < 10*time.Second {
         return c.JSON(http.StatusOK, cache.Data)
     }
 	characterList := []Isu{}
