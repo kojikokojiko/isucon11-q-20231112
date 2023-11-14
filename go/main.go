@@ -499,7 +499,7 @@ func getIsuList(c echo.Context) error {
 				Timestamp:      lastCondition.Timestamp.Unix(),
 				IsSitting:      lastCondition.IsSitting,
 				Condition:      lastCondition.Condition,
-				ConditionLevel: lastCondition.Condition,
+				ConditionLevel: lastCondition.ConditionLevel,
 				Message:        lastCondition.Message,
 			}
 		}
