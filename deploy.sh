@@ -22,6 +22,7 @@ sudo cp etc/mysql/my.cnf /etc/mysql/my.cnf
 echo "Copying Nginx configuration..."
 sudo cp etc/nginx/nginx.conf /etc/nginx/
 sudo cp etc/nginx/conf.d/default.conf /etc/nginx/conf.d/
+sudo cp etc/nginx/sites-available/isucondition.conf /etc/nginx/sites-available/
 
 # Golangディレクトリに移動
 echo "Changing directory to golang..."
