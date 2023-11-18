@@ -1144,9 +1144,9 @@ var cache TrendCache
 func getTrend(c echo.Context) error {
 
     // キャッシュの有効期限をチェック（例：10s）
-    if time.Since(cache.Timestamp) < 10*time.Second {
-        return c.JSON(http.StatusOK, cache.Data)
-    }
+    // if time.Since(cache.Timestamp) < 10*time.Second {
+    //     return c.JSON(http.StatusOK, cache.Data)
+    // }
 	characterList := []Isu{}
 	err := db.Select(&characterList, "SELECT `character` FROM `isu` GROUP BY `character`")
 	if err != nil {
@@ -1221,10 +1221,10 @@ func getTrend(c echo.Context) error {
 	}
 
 	// データベースからのデータ取得後、キャッシュに保存
-	cache = TrendCache{
-		Data:      res,
-		Timestamp: time.Now(),
-	}
+	// cache = TrendCache{
+	// 	Data:      res,
+	// 	Timestamp: time.Now(),
+	// }
 
 	return c.JSON(http.StatusOK, res)
 }
