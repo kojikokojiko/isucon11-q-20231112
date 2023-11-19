@@ -1318,38 +1318,30 @@ func postIsuCondition(c echo.Context) error {
 	return c.NoContent(http.StatusAccepted)
 }
 
-// ISUのコンディションの文字列がcsv形式になっているか検証
 func isValidConditionFormat(conditionStr string) bool {
+	keys := []string{"is_dirty", "is_overweight", "is_broken"}
+	values := map[string]bool{
+		"true":  true,
+		"false": true,
+	}
 
-	keys := []string{"is_dirty=", "is_overweight=", "is_broken="}
-	const valueTrue = "true"
-	const valueFalse = "false"
+	conditions := strings.Split(conditionStr, ",")
 
-	idxCondStr := 0
+	if len(conditions) != len(keys) {
+		return false
+	}
 
-	for idxKeys, key := range keys {
-		if !strings.HasPrefix(conditionStr[idxCondStr:], key) {
+	for i, condition := range conditions {
+		parts := strings.SplitN(condition, "=", 2)
+		if len(parts) != 2 {
 			return false
 		}
-		idxCondStr += len(key)
-
-		if strings.HasPrefix(conditionStr[idxCondStr:], valueTrue) {
-			idxCondStr += len(valueTrue)
-		} else if strings.HasPrefix(conditionStr[idxCondStr:], valueFalse) {
-			idxCondStr += len(valueFalse)
-		} else {
+		if parts[0] != keys[i] || !values[parts[1]] {
 			return false
-		}
-
-		if idxKeys < (len(keys) - 1) {
-			if conditionStr[idxCondStr] != ',' {
-				return false
-			}
-			idxCondStr++
 		}
 	}
 
-	return (idxCondStr == len(conditionStr))
+	return true
 }
 
 func getIndex(c echo.Context) error {
